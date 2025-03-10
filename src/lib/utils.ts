@@ -39,15 +39,47 @@ export function dateIsInLastSevenDays(date: Date | string): boolean {
   return dateObj >= sevenDaysAgo;
 }
 
-// Function to extract unique client names from transactions
+// Função para extrair nomes de clientes únicos das transações
 export function getUniqueClientCount(transactions: Transaction[]): number {
   const uniqueClients = new Set();
   
   transactions.forEach(transaction => {
     if (transaction.clientName) {
       uniqueClients.add(transaction.clientName);
+    } else {
+      // Tenta extrair o nome do cliente da descrição para compatibilidade
+      const clientMatch = transaction.description.match(/"([^"]+)"/);
+      if (clientMatch && clientMatch[1]) {
+        uniqueClients.add(clientMatch[1]);
+      }
     }
   });
   
   return uniqueClients.size;
+}
+
+// Função para extrair logins de clientes únicos das transações
+export function getUniqueClientLogins(transactions: Transaction[]): string[] {
+  const uniqueLogins = new Set<string>();
+  
+  transactions.forEach(transaction => {
+    if (transaction.clientLogin) {
+      uniqueLogins.add(transaction.clientLogin);
+    }
+  });
+  
+  return Array.from(uniqueLogins);
+}
+
+// Função para obter métodos de pagamento usados
+export function getPaymentMethods(transactions: Transaction[]): string[] {
+  const methods = new Set<string>();
+  
+  transactions.forEach(transaction => {
+    if (transaction.method) {
+      methods.add(transaction.method);
+    }
+  });
+  
+  return Array.from(methods);
 }

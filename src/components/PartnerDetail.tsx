@@ -16,7 +16,8 @@ import {
   ArrowUpRight,
   BarChart3,
   Filter,
-  DollarSign
+  DollarSign,
+  AtSign
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import ImportCSV from "./ImportCSV";
@@ -39,7 +40,7 @@ const PartnerDetail = () => {
 
   const summary = getPartnerSummary(selectedPartnerId);
 
-  // Get last 7 days transactions
+  // Obter transações dos últimos 7 dias
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   
@@ -51,14 +52,12 @@ const PartnerDetail = () => {
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Count unique clients
+  // Contar clientes únicos
   const getClientCount = () => {
     const uniqueClients = new Set();
     recentTransactions.forEach(t => {
-      // Extract client name from description
-      const clientMatch = t.description.match(/"([^"]+)"/);
-      if (clientMatch && clientMatch[1]) {
-        uniqueClients.add(clientMatch[1]);
+      if (t.clientName) {
+        uniqueClients.add(t.clientName);
       }
     });
     return uniqueClients.size;
@@ -67,23 +66,23 @@ const PartnerDetail = () => {
   const clientCount = getClientCount();
 
   const exportToCSV = () => {
-    const headers = ['Data', 'Hora', 'Cliente', 'Descrição', 'Valor', 'Tipo'];
+    const headers = ['Data', 'Hora', 'Cliente', 'Login do Cliente', 'Descrição', 'Valor', 'Tipo', 'Método'];
     
     const csvRows = [
       headers.join(','),
       ...recentTransactions.map(t => {
         const dateTime = new Date(t.date);
-        const formattedTime = format(dateTime, 'HH:mm', { locale: ptBR });
-        const clientMatch = t.description.match(/"([^"]+)"/);
-        const client = clientMatch ? clientMatch[1] : '';
+        const formattedTime = t.time || format(dateTime, 'HH:mm', { locale: ptBR });
         
         return [
           format(dateTime, 'dd/MM/yyyy', { locale: ptBR }),
           formattedTime,
-          client,
+          t.clientName || '',
+          t.clientLogin || '',
           t.description.replace(/"/g, '""'),
           t.amount.toFixed(2),
-          t.type
+          t.type,
+          t.method || ''
         ].join(',');
       })
     ];
@@ -313,13 +312,14 @@ const PartnerDetail = () => {
               ) : (
                 <div className="space-y-4">
                   {recentTransactions.map((transaction) => {
-                    // Extract client name from description
-                    const clientMatch = transaction.description.match(/"([^"]+)"/);
-                    const clientName = clientMatch ? clientMatch[1] : 'Cliente';
+                    // Extrair nome do cliente do description ou usar o campo direto
+                    const clientName = transaction.clientName || 
+                      (transaction.description.match(/"([^"]+)"/) ? 
+                        transaction.description.match(/"([^"]+)"/)![1] : 'Cliente');
                     
-                    // Create timestamp
+                    // Criar timestamp
                     const transactionDate = new Date(transaction.date);
-                    const formattedTime = format(transactionDate, 'HH:mm', { locale: ptBR });
+                    const formattedTime = transaction.time || format(transactionDate, 'HH:mm', { locale: ptBR });
                     
                     return (
                       <div 
@@ -342,14 +342,33 @@ const PartnerDetail = () => {
                             )}
                           </div>
                           <div>
-                            <div className="flex items-center">
+                            <div className="flex items-center flex-wrap gap-2">
                               <p className="font-medium">{transaction.description.replace(/"/g, '')}</p>
-                              <Badge 
-                                variant="outline" 
-                                className="ml-2 text-xs bg-indigo-100 text-indigo-600 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800"
-                              >
-                                {clientName}
-                              </Badge>
+                              {transaction.clientName && (
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-xs bg-indigo-100 text-indigo-600 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800"
+                                >
+                                  {clientName}
+                                </Badge>
+                              )}
+                              {transaction.clientLogin && (
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-xs bg-purple-100 text-purple-600 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800 flex items-center"
+                                >
+                                  <AtSign className="h-3 w-3 mr-1" />
+                                  {transaction.clientLogin}
+                                </Badge>
+                              )}
+                              {transaction.method && (
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-xs bg-blue-100 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+                                >
+                                  {transaction.method}
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex items-center text-sm text-muted-foreground gap-3 mt-1">
                               <div className="flex items-center">
@@ -399,24 +418,26 @@ const PartnerDetail = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Extract unique clients and their total transactions */}
+                  {/* Extrair clientes únicos e suas transações totais */}
                   {(() => {
                     const clientMap = new Map();
                     
                     recentTransactions.forEach(t => {
-                      const clientMatch = t.description.match(/"([^"]+)"/);
-                      const client = clientMatch ? clientMatch[1] : 'Cliente';
+                      const clientName = t.clientName || 
+                        (t.description.match(/"([^"]+)"/) ? 
+                          t.description.match(/"([^"]+)"/)![1] : 'Cliente');
                       
-                      if (!clientMap.has(client)) {
-                        clientMap.set(client, {
-                          name: client,
+                      if (!clientMap.has(clientName)) {
+                        clientMap.set(clientName, {
+                          name: clientName,
+                          login: t.clientLogin || '',
                           transactions: 0,
                           totalIn: 0,
                           totalOut: 0
                         });
                       }
                       
-                      const clientData = clientMap.get(client);
+                      const clientData = clientMap.get(clientName);
                       clientData.transactions++;
                       
                       if (t.type === 'entrada') {
@@ -426,7 +447,7 @@ const PartnerDetail = () => {
                       }
                     });
                     
-                    // Sort by transaction count
+                    // Ordenar por contagem de transações
                     return Array.from(clientMap.values())
                       .sort((a, b) => b.transactions - a.transactions)
                       .map((client, index) => (
@@ -439,7 +460,18 @@ const PartnerDetail = () => {
                               <User className="h-5 w-5" />
                             </div>
                             <div>
-                              <p className="font-medium">{client.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{client.name}</p>
+                                {client.login && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs bg-purple-100 text-purple-600 border-purple-200 flex items-center"
+                                  >
+                                    <AtSign className="h-3 w-3 mr-1" />
+                                    {client.login}
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-sm text-muted-foreground">
                                 {client.transactions} transações nos últimos 7 dias
                               </p>

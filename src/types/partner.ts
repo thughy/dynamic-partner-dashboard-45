@@ -6,19 +6,21 @@ export interface Transaction {
   amount: number;
   type: 'entrada' | 'saida';
   description: string;
-  clientName?: string;   // Adding client name field
-  time?: string;         // Adding transaction time
-  method?: string;       // Adding payment method (like "PIX")
+  clientName?: string;   // Nome do cliente
+  clientLogin?: string;  // Login/conta do cliente que efetuou a transação
+  time?: string;         // Horário da transação
+  method?: string;       // Método de pagamento (como "PIX")
 }
 
 export interface Partner {
   id: string;
   name: string;
   username: string;
-  commission: number; // Percentage
-  bonus: number;      // Fixed value
+  commission: number; // Percentual
+  bonus: number;      // Valor fixo
   transactions: Transaction[];
-  clientCount?: number; // Adding client count
+  clientCount?: number; // Contagem de clientes
+  active?: boolean;     // Se o parceiro está ativo ou não
 }
 
 export interface PartnerSummary {
@@ -31,8 +33,8 @@ export interface PartnerSummary {
   commissionValue: number;
   bonus: number;
   finalBalance: number;
-  clientCount?: number; // Adding client count
-  transactionCount?: number; // Adding transaction count
+  clientCount?: number; // Contagem de clientes
+  transactionCount?: number; // Contagem de transações
 }
 
 export interface LoginCredentials {
