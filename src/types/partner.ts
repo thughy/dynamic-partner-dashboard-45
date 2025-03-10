@@ -6,6 +6,9 @@ export interface Transaction {
   amount: number;
   type: 'entrada' | 'saida';
   description: string;
+  clientName?: string;   // Adding client name field
+  time?: string;         // Adding transaction time
+  method?: string;       // Adding payment method (like "PIX")
 }
 
 export interface Partner {
@@ -15,6 +18,7 @@ export interface Partner {
   commission: number; // Percentage
   bonus: number;      // Fixed value
   transactions: Transaction[];
+  clientCount?: number; // Adding client count
 }
 
 export interface PartnerSummary {
@@ -27,6 +31,8 @@ export interface PartnerSummary {
   commissionValue: number;
   bonus: number;
   finalBalance: number;
+  clientCount?: number; // Adding client count
+  transactionCount?: number; // Adding transaction count
 }
 
 export interface LoginCredentials {
