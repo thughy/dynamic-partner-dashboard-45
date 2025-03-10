@@ -3,6 +3,7 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { format as fnsFormat } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Transaction } from "@/types/partner"; // Add the import for Transaction type
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
