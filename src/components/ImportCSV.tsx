@@ -1,309 +1,157 @@
 
-import React, { useState, useRef } from 'react';
-import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useRef } from "react";
+import { usePartners } from "@/context/PartnerContext";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Upload, File, CheckCircle, AlertCircle, X } from "lucide-react";
-import { CSVImportData } from '@/types';
+import { Upload, FileText } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-const ImportCSV = () => {
-  const [files, setFiles] = useState<File[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [imports, setImports] = useState<CSVImportData[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+interface ImportCSVProps {
+  partnerId?: string;
+  onComplete?: () => void;
+}
+
+const ImportCSV = ({ partnerId, onComplete }: ImportCSVProps) => {
+  const { partners, importCSVForPartner } = usePartners();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string>(partnerId || "");
+  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const extractPartnerUsernameFromFilename = (filename: string): string => {
-    // This would be more sophisticated in a real app
-    // For example, extract @username from "transactions_@username_date.csv"
-    const match = filename.match(/@([a-zA-Z0-9_]+)/);
-    return match ? match[1] : 'unknown';
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    handleFiles(droppedFiles);
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const selectedFiles = Array.from(e.target.files);
-      handleFiles(selectedFiles);
-      // Reset the input value to allow selecting the same file again
-      e.target.value = '';
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
     }
   };
 
-  const handleFiles = (newFiles: File[]) => {
-    // Only accept CSV files
-    const validFiles = newFiles.filter(file => file.name.endsWith('.csv'));
-    
-    if (validFiles.length !== newFiles.length) {
-      toast.error("Some files were not accepted. Only CSV files are allowed.");
-    }
-    
-    if (validFiles.length > 0) {
-      setFiles(prev => [...prev, ...validFiles]);
-      
-      // Create import records
-      const newImports = validFiles.map(file => ({
-        filename: file.name,
-        partnerUsername: extractPartnerUsernameFromFilename(file.name),
-        date: new Date(),
-        status: 'pending' as const
-      }));
-      
-      setImports(prev => [...prev, ...newImports]);
-    }
+  const handlePartnerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedPartnerId(e.target.value);
   };
 
-  const removeFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-    setImports(prev => prev.filter((_, i) => i !== index));
-  };
+  const handleUpload = async () => {
+    if (!selectedFile || !selectedPartnerId) {
+      toast({
+        title: "Erro",
+        description: "Selecione um arquivo e um parceiro",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const processFiles = async () => {
-    if (files.length === 0) return;
-    
-    setIsUploading(true);
-    setUploadProgress(0);
-    
+    setIsLoading(true);
+
     try {
-      // Simulate processing each file
-      for (let i = 0; i < files.length; i++) {
-        // Update the status to processing
-        setImports(prev => prev.map((imp, idx) => 
-          idx === i ? { ...imp, status: 'processing' as const } : imp
-        ));
-        
-        // Simulate file processing
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Update progress
-        const progress = Math.round(((i + 1) / files.length) * 100);
-        setUploadProgress(progress);
-        
-        // Randomly succeed or fail for demo purposes
-        const success = Math.random() > 0.2;
-        
-        if (success) {
-          setImports(prev => prev.map((imp, idx) => 
-            idx === i ? { 
-              ...imp, 
-              status: 'completed' as const,
-              records: Math.floor(Math.random() * 100) + 10
-            } : imp
-          ));
-        } else {
-          setImports(prev => prev.map((imp, idx) => 
-            idx === i ? { 
-              ...imp, 
-              status: 'error' as const,
-              error: 'Erro ao processar arquivo'
-            } : imp
-          ));
-        }
-      }
+      const reader = new FileReader();
       
-      toast.success(`Processamento concluído. ${imports.filter(imp => imp.status === 'completed').length}/${imports.length} arquivos processados com sucesso.`);
+      reader.onload = (event) => {
+        if (event.target && typeof event.target.result === 'string') {
+          importCSVForPartner(selectedPartnerId, event.target.result);
+          
+          // Reset form
+          setSelectedFile(null);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+          
+          if (onComplete) {
+            onComplete();
+          }
+        }
+      };
+      
+      reader.readAsText(selectedFile);
     } catch (error) {
-      toast.error("Erro ao processar arquivos");
-      console.error("Error processing files:", error);
+      console.error('Error reading file:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao ler o arquivo CSV.",
+        variant: "destructive",
+      });
     } finally {
-      setIsUploading(false);
-      setUploadProgress(100);
+      setIsLoading(false);
     }
-  };
-  
-  const openFileDialog = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-  
-  const clearAll = () => {
-    setFiles([]);
-    setImports([]);
-    setUploadProgress(0);
   };
 
   return (
-    <Card className="glass-card shadow-lg w-full max-w-3xl mx-auto">
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-2xl">Importar Dados CSV</CardTitle>
-        <CardDescription>
-          Arraste e solte arquivos CSV exportados do sistema de parceiros
-        </CardDescription>
+        <CardTitle>Importar Transações (CSV)</CardTitle>
       </CardHeader>
-      
-      <CardContent className="space-y-6">
-        {/* Drag and drop area */}
-        <div
-          className={`
-            border-2 border-dashed rounded-lg p-8 transition-all duration-300 text-center
-            ${isDragging 
-              ? 'border-master-gold bg-master-gold/10' 
-              : 'border-gray-300 dark:border-gray-700 hover:border-master-gold/50'
-            }
-          `}
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onClick={openFileDialog}
-        >
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            accept=".csv"
-            multiple
-            onChange={handleFileInput}
-          />
-          
-          <Upload 
-            className={`mx-auto h-10 w-10 mb-4 ${isDragging ? 'text-master-gold' : 'text-gray-400'}`} 
-          />
-          
-          <h3 className="text-lg font-medium mb-1">
-            {isDragging ? 'Solte os arquivos aqui' : 'Arraste e solte arquivos CSV'}
-          </h3>
-          
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            ou <span className="text-master-gold underline cursor-pointer">selecione os arquivos</span>
+      <CardContent className="space-y-4">
+        {!partnerId && (
+          <div className="space-y-2">
+            <label htmlFor="partner" className="block text-sm font-medium">
+              Selecione o Parceiro
+            </label>
+            <select
+              id="partner"
+              className="w-full px-3 py-2 border rounded-md"
+              value={selectedPartnerId}
+              onChange={handlePartnerChange}
+              disabled={isLoading}
+            >
+              <option value="">Selecione um parceiro</option>
+              {partners.map((partner) => (
+                <option key={partner.id} value={partner.id}>
+                  {partner.name} ({partner.username})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <label htmlFor="csv-file" className="block text-sm font-medium">
+            Arquivo CSV
+          </label>
+          <div className="flex items-center gap-2">
+            <Input
+              ref={fileInputRef}
+              id="csv-file"
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              disabled={isLoading}
+              className="flex-1"
+            />
+          </div>
+          {selectedFile && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <FileText className="h-4 w-4" />
+              {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-md bg-muted p-3 text-sm">
+          <p className="font-medium">Formato Esperado do CSV:</p>
+          <p className="text-muted-foreground mt-1">
+            data,descrição,valor,tipo
           </p>
-          
-          <p className="text-xs text-gray-400">
-            Somente arquivos CSV são aceitos
+          <p className="text-muted-foreground">
+            2023-07-01,Depósito,1000.00,entrada
+          </p>
+          <p className="text-muted-foreground">
+            2023-07-02,Saque,500.00,saida
           </p>
         </div>
-        
-        {/* Files list */}
-        {files.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Arquivos ({files.length})</h3>
-              <Button variant="ghost" size="sm" onClick={clearAll}>
-                Limpar todos
-              </Button>
-            </div>
-            
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-              {imports.map((importItem, index) => (
-                <div 
-                  key={index} 
-                  className="flex items-center p-3 rounded-md bg-background border"
-                >
-                  <div className="mr-3">
-                    <File className="h-6 w-6 text-gray-500" />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {importItem.filename}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Parceiro: @{importItem.partnerUsername}
-                    </p>
-                  </div>
-                  
-                  <div className="ml-2 flex items-center">
-                    {importItem.status === 'pending' && (
-                      <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
-                        Pendente
-                      </span>
-                    )}
-                    
-                    {importItem.status === 'processing' && (
-                      <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-2 py-1 rounded animate-pulse">
-                        Processando...
-                      </span>
-                    )}
-                    
-                    {importItem.status === 'completed' && (
-                      <div className="flex items-center">
-                        <CheckCircle className="h-5 w-5 text-green-500 mr-1" />
-                        <span className="text-xs text-green-600 dark:text-green-400">
-                          {importItem.records} registros
-                        </span>
-                      </div>
-                    )}
-                    
-                    {importItem.status === 'error' && (
-                      <div className="flex items-center">
-                        <AlertCircle className="h-5 w-5 text-red-500 mr-1" />
-                        <span className="text-xs text-red-600 dark:text-red-400">
-                          Erro
-                        </span>
-                      </div>
-                    )}
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="ml-2 h-6 w-6"
-                      onClick={() => removeFile(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Upload progress */}
-        {isUploading && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span>Processando arquivos...</span>
-              <span>{uploadProgress}%</span>
-            </div>
-            <Progress value={uploadProgress} className="h-2" />
-          </div>
-        )}
       </CardContent>
-      
-      <CardFooter className="flex justify-end space-x-4">
-        <Button 
-          variant="outline" 
-          onClick={clearAll}
-          disabled={files.length === 0 || isUploading}
+      <CardFooter>
+        <Button
+          onClick={handleUpload}
+          disabled={!selectedFile || !selectedPartnerId || isLoading}
+          className="w-full bg-master-gold hover:bg-master-darkGold text-white"
         >
-          Cancelar
-        </Button>
-        
-        <Button 
-          onClick={processFiles}
-          disabled={files.length === 0 || isUploading}
-          className="bg-master-gold hover:bg-master-darkGold text-black"
-        >
-          {isUploading ? 'Processando...' : 'Processar arquivos'}
+          {isLoading ? (
+            "Importando..."
+          ) : (
+            <>
+              <Upload className="mr-2 h-4 w-4" />
+              Importar Dados
+            </>
+          )}
         </Button>
       </CardFooter>
     </Card>
