@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				master: {
+					gold: '#D4AF37',
+					darkGold: '#BF9B30',
+					black: '#121212',
+					gray: '#2A2A2A',
+					lightGray: '#3D3D3D'
 				}
 			},
 			borderRadius: {
@@ -84,11 +92,42 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': { opacity: '0' },
+					'100%': { opacity: '1' }
+				},
+				'fade-up': {
+					'0%': { opacity: '0', transform: 'translateY(10px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
+				},
+				'shimmer': {
+					'0%': { backgroundPosition: '-500px 0' },
+					'100%': { backgroundPosition: '500px 0' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out',
+				'fade-up': 'fade-up 0.5s ease-out',
+				'shimmer': 'shimmer 1.5s infinite linear'
+			},
+			backgroundImage: {
+				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+				'gradient-gold': 'linear-gradient(180deg, #F0D882 0%, #D4AF37 50%, #BF9B30 100%)',
+				'gradient-dark': 'linear-gradient(180deg, #2A2A2A 0%, #1A1A1A 100%)',
+				'diagonal-gold': 'linear-gradient(45deg, #D4AF37 0%, #BF9B30 100%)'
+			},
+			boxShadow: {
+				'gold': '0 4px 20px -2px rgba(212, 175, 55, 0.3)',
+				'gold-soft': '0 2px 10px -1px rgba(212, 175, 55, 0.2)',
+				'inner-gold': 'inset 0 2px 4px 0 rgba(212, 175, 55, 0.1)'
+			},
+			fontFamily: {
+				sans: ['Inter', 'sans-serif'],
+				serif: ['Playfair Display', 'serif'],
+				display: ['Cinzel', 'serif']
 			}
 		}
 	},
