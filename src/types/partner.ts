@@ -28,3 +28,19 @@ export interface PartnerSummary {
   bonus: number;
   finalBalance: number;
 }
+
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface GoogleSheetsConfig {
+  spreadsheetId: string;
+  sheetId: number;
+}
+
+export interface SyncStatus {
+  lastSync: string;
+  status: 'idle' | 'syncing' | 'success' | 'error';
+  message?: string;
+}
