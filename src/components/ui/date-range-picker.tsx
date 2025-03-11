@@ -38,10 +38,9 @@ export function DatePickerWithRange({
   // When date changes, call onSelect callback if provided
   React.useEffect(() => {
     if (onSelect && date) {
-      // Make sure we handle the case where 'to' might be undefined
       onSelect({
         from: date.from,
-        to: date.to
+        to: date.to || date.from // Ensure 'to' is never undefined if 'from' is selected
       });
     }
   }, [date, onSelect]);
