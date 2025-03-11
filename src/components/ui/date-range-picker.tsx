@@ -1,6 +1,6 @@
 
 import * as React from "react"
-import { addDays, format } from "date-fns"
+import { addDays, format, startOfWeek } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { DateRange } from "react-day-picker"
@@ -14,7 +14,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-interface DatePickerWithRangeProps extends React.HTMLAttributes<HTMLDivElement> {
+interface DatePickerWithRangeProps {
   className?: string
   onSelect?: (dateRange: { from: Date | undefined; to: Date | undefined }) => void;
 }
@@ -23,9 +23,16 @@ export function DatePickerWithRange({
   className,
   onSelect,
 }: DatePickerWithRangeProps) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: undefined,
-    to: undefined,
+  const [date, setDate] = React.useState<DateRange | undefined>(() => {
+    // Default to current week (Monday to Sunday)
+    const today = new Date();
+    const monday = startOfWeek(today, { weekStartsOn: 1 }); // 1 = Monday
+    const sunday = addDays(monday, 6);
+    
+    return {
+      from: monday,
+      to: sunday,
+    };
   });
 
   // When date changes, call onSelect callback if provided
@@ -71,6 +78,7 @@ export function DatePickerWithRange({
             onSelect={setDate}
             numberOfMonths={2}
             locale={ptBR}
+            weekStartsOn={1} // Make weeks start on Monday
           />
         </PopoverContent>
       </Popover>

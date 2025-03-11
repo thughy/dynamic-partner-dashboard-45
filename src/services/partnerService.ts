@@ -1,25 +1,28 @@
-import { Partner, Transaction, PartnerSummary, Client } from '@/types/partner';
 
-// Função para obter transações dos últimos 7 dias
-export const getLastSevenDaysTransactions = (transactions: Transaction[]): Transaction[] => {
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+import { Partner, Transaction, PartnerSummary, Client } from '@/types/partner';
+import { startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+
+// Função para obter transações da semana atual (segunda a domingo)
+export const getCurrentWeekTransactions = (transactions: Transaction[]): Transaction[] => {
+  const today = new Date();
+  const mondayOfWeek = startOfWeek(today, { weekStartsOn: 1 }); // 1 = Monday
+  const sundayOfWeek = endOfWeek(today, { weekStartsOn: 1 });
   
   return transactions.filter(transaction => {
     const transactionDate = new Date(transaction.date);
-    return transactionDate >= sevenDaysAgo;
+    return isWithinInterval(transactionDate, { start: mondayOfWeek, end: sundayOfWeek });
   });
 };
 
-// Função para calcular o resumo do parceiro com base nos últimos 7 dias
+// Função para calcular o resumo do parceiro com base na semana atual
 export const calculatePartnerSummary = (partner: Partner): PartnerSummary => {
-  const lastSevenDaysTransactions = getLastSevenDaysTransactions(partner.transactions);
+  const currentWeekTransactions = getCurrentWeekTransactions(partner.transactions);
   
-  const totalIn = lastSevenDaysTransactions
+  const totalIn = currentWeekTransactions
     .filter(t => t.type === 'entrada')
     .reduce((sum, t) => sum + t.amount, 0);
     
-  const totalOut = lastSevenDaysTransactions
+  const totalOut = currentWeekTransactions
     .filter(t => t.type === 'saida')
     .reduce((sum, t) => sum + t.amount, 0);
   
@@ -28,7 +31,7 @@ export const calculatePartnerSummary = (partner: Partner): PartnerSummary => {
   
   // Contar clientes únicos
   const uniqueClients = new Set();
-  lastSevenDaysTransactions.forEach(t => {
+  currentWeekTransactions.forEach(t => {
     if (t.clientName) {
       uniqueClients.add(t.clientName);
     }
@@ -45,7 +48,7 @@ export const calculatePartnerSummary = (partner: Partner): PartnerSummary => {
     bonus: partner.bonus,
     finalBalance,
     clientCount: uniqueClients.size,
-    transactionCount: lastSevenDaysTransactions.length
+    transactionCount: currentWeekTransactions.length
   };
 };
 
@@ -110,8 +113,8 @@ export const calculateTotalSummary = (partners: Partner[]) => {
   // Contar clientes únicos em todos os parceiros
   const uniqueClients = new Set();
   partners.forEach(partner => {
-    const lastSevenDaysTransactions = getLastSevenDaysTransactions(partner.transactions);
-    lastSevenDaysTransactions.forEach(t => {
+    const currentWeekTransactions = getCurrentWeekTransactions(partner.transactions);
+    currentWeekTransactions.forEach(t => {
       if (t.clientName) {
         uniqueClients.add(t.clientName);
       }

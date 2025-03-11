@@ -4,69 +4,82 @@
 
 import { LoginCredentials, Partner, Transaction } from "@/types/partner";
 import { toast } from "@/hooks/use-toast";
+import { startOfWeek, endOfWeek, format } from "date-fns";
 
 // Simulate fetching partners from a website
 export const fetchPartnersFromWebsite = async (credentials: LoginCredentials): Promise<Partner[] | null> => {
-  console.info('Buscando parceiros do site com credenciais:', credentials);
+  console.info('Buscando parceiros do site Virtual Club com credenciais:', credentials);
   
   // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 2000));
   
-  // Mock data
+  // Mock data more aligned with Virtual Club
   const mockPartners: Partner[] = [
     {
       id: '1',
-      name: 'Tayna',
-      username: '@tayna',
+      name: 'Roberto Silva',
+      username: '@roberto',
       commission: 10,
-      bonus: 50,
+      bonus: 100,
       transactions: [],
-      clients: [], // Add empty clients array
+      clients: [],
       active: true
     },
     {
       id: '2',
-      name: 'Raquel',
-      username: '@raquel',
-      commission: 8,
-      bonus: 75,
+      name: 'Marcela Santos',
+      username: '@marcela',
+      commission: 12,
+      bonus: 150,
       transactions: [],
-      clients: [], // Add empty clients array
+      clients: [],
       active: true
     },
     {
       id: '3',
-      name: 'Carlos',
-      username: '@carlos',
-      commission: 12,
-      bonus: 100,
+      name: 'Paulo Mendes',
+      username: '@paulo',
+      commission: 8,
+      bonus: 75,
       transactions: [],
-      clients: [], // Add empty clients array
+      clients: [],
       active: true
     },
     {
       id: '4',
-      name: 'Inativo',
-      username: '@inativo',
-      commission: 5,
-      bonus: 0,
+      name: 'Fernanda Costa',
+      username: '@fernanda',
+      commission: 15,
+      bonus: 200,
       transactions: [],
-      clients: [], // Add empty clients array
-      active: false
+      clients: [],
+      active: true
     },
     {
       id: '5',
-      name: 'Novo',
-      username: '@novo',
+      name: 'Lucas Oliveira',
+      username: '@lucas',
       commission: 7,
-      bonus: 25,
+      bonus: 50,
       transactions: [],
-      clients: [], // Add empty clients array
-      active: true
+      clients: [],
+      active: false
     }
   ];
   
   return mockPartners;
+};
+
+// Get current week dates (Monday to Sunday)
+const getCurrentWeekDates = () => {
+  const today = new Date();
+  const monday = startOfWeek(today, { weekStartsOn: 1 });
+  const sunday = endOfWeek(monday, { weekStartsOn: 1 });
+  
+  return {
+    monday: format(monday, 'yyyy-MM-dd'),
+    sunday: format(sunday, 'yyyy-MM-dd')
+  };
 };
 
 // Fetch transactions for a specific partner
@@ -74,42 +87,69 @@ export const fetchPartnerTransactions = async (partner: Partner, credentials: Lo
   // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 1500));
   
-  // Mock data
+  const { monday, sunday } = getCurrentWeekDates();
+  console.log(`Fetching transactions for ${partner.username} from ${monday} to ${sunday}`);
+  
+  // Mock data with realistic client names and more varied transactions
   const mockTransactions: Transaction[] = [
     { 
       id: `${partner.id}-1`, 
       partnerId: partner.id, 
-      date: new Date().toISOString().split('T')[0], 
-      amount: 500, 
+      date: monday, 
+      amount: 1200, 
       type: 'entrada', 
-      description: 'Depósito Cliente A',
-      clientName: 'Cliente A',
-      clientLogin: '@clienteA',
-      time: '10:30',
+      description: 'Depósito',
+      clientName: 'João Almeida',
+      clientLogin: '@joao_almeida',
+      time: '09:15',
       method: 'PIX'
     },
     { 
       id: `${partner.id}-2`, 
       partnerId: partner.id, 
-      date: new Date().toISOString().split('T')[0], 
-      amount: 200, 
+      date: monday, 
+      amount: 350, 
       type: 'saida', 
-      description: 'Saque Cliente A',
-      clientName: 'Cliente A',
-      clientLogin: '@clienteA',
-      time: '14:15',
+      description: 'Saque',
+      clientName: 'João Almeida',
+      clientLogin: '@joao_almeida',
+      time: '14:30',
       method: 'PIX'
     },
     { 
       id: `${partner.id}-3`, 
       partnerId: partner.id, 
-      date: new Date().toISOString().split('T')[0], 
-      amount: 300, 
+      date: format(new Date(monday), 'yyyy-MM-dd'), 
+      amount: 800, 
       type: 'entrada', 
-      description: 'Depósito Cliente B',
-      clientName: 'Cliente B',
-      clientLogin: '@clienteB',
-      time: '16:45',
+      description: 'Depósito',
+      clientName: 'Maria Santos',
+      clientLogin: '@maria_santos',
+      time: '16:20',
+      method: 'PIX'
+    },
+    { 
+      id: `${partner.id}-4`, 
+      partnerId: partner.id, 
+      date: sunday, 
+      amount: 1500, 
+      type: 'entrada', 
+      description: 'Depósito',
+      clientName: 'Pedro Gomes',
+      clientLogin: '@pedro_gomes',
+      time: '10:45',
+      method: 'PIX'
+    },
+    { 
+      id: `${partner.id}-5`, 
+      partnerId: partner.id, 
+      date: sunday, 
+      amount: 700, 
+      type: 'saida', 
+      description: 'Saque',
+      clientName: 'Pedro Gomes',
+      clientLogin: '@pedro_gomes',
+      time: '18:30',
       method: 'PIX'
     }
   ];
@@ -123,17 +163,27 @@ export const downloadCSV = async (partner: Partner, credentials: LoginCredential
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Generate mock CSV content
+    const { monday, sunday } = getCurrentWeekDates();
+    console.log(`Downloading CSV for ${partner.username} from ${monday} to ${sunday}`);
+    
+    // Generate mock CSV content with dates from the current week (Monday to Sunday)
     const headers = 'data,hora,cliente,login,descricao,valor,tipo,metodo';
     const rows = [
-      `${new Date().toISOString().split('T')[0]},10:30,"Cliente A","@clienteA","Depósito",500.00,entrada,PIX`,
-      `${new Date().toISOString().split('T')[0]},14:15,"Cliente A","@clienteA","Saque",200.00,saida,PIX`,
-      `${new Date().toISOString().split('T')[0]},16:45,"Cliente B","@clienteB","Depósito",300.00,entrada,PIX`,
-      `${new Date().toISOString().split('T')[0]},18:20,"Cliente C","@clienteC","Depósito",750.00,entrada,PIX`,
-      `${new Date().toISOString().split('T')[0]},20:10,"Cliente C","@clienteC","Saque",50.00,saida,PIX`
+      `${monday},09:15,"João Almeida","@joao_almeida","Depósito",1200.00,entrada,PIX`,
+      `${monday},14:30,"João Almeida","@joao_almeida","Saque",350.00,saida,PIX`,
+      `${monday},16:20,"Maria Santos","@maria_santos","Depósito",800.00,entrada,PIX`,
+      `${format(new Date(monday), 'yyyy-MM-dd')},11:05,"Carlos Ferreira","@carlos_ferreira","Depósito",950.00,entrada,PIX`,
+      `${format(new Date(monday), 'yyyy-MM-dd')},17:40,"Carlos Ferreira","@carlos_ferreira","Saque",200.00,saida,PIX`,
+      `${sunday},10:45,"Pedro Gomes","@pedro_gomes","Depósito",1500.00,entrada,PIX`,
+      `${sunday},18:30,"Pedro Gomes","@pedro_gomes","Saque",700.00,saida,PIX`
     ];
     
     const csvContent = `${headers}\n${rows.join('\n')}`;
+    
+    toast({
+      title: "Download concluído",
+      description: `Dados do parceiro ${partner.name} baixados com sucesso`,
+    });
     
     return csvContent;
   } catch (error) {
@@ -141,7 +191,7 @@ export const downloadCSV = async (partner: Partner, credentials: LoginCredential
     
     toast({
       title: "Erro ao baixar CSV",
-      description: "Não foi possível baixar o arquivo CSV do site.",
+      description: "Não foi possível baixar o arquivo CSV do site Virtual Club.",
       variant: "destructive",
     });
     
