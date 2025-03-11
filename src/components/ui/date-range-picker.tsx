@@ -37,8 +37,12 @@ export function DatePickerWithRange({
 
   // When date changes, call onSelect callback if provided
   React.useEffect(() => {
-    if (onSelect) {
-      onSelect(date || { from: undefined, to: undefined });
+    if (onSelect && date) {
+      // Make sure we handle the case where 'to' might be undefined
+      onSelect({
+        from: date.from,
+        to: date.to
+      });
     }
   }, [date, onSelect]);
 
@@ -69,7 +73,7 @@ export function DatePickerWithRange({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
           <Calendar
             initialFocus
             mode="range"
@@ -79,6 +83,7 @@ export function DatePickerWithRange({
             numberOfMonths={2}
             locale={ptBR}
             weekStartsOn={1} // Make weeks start on Monday
+            className="pointer-events-auto"
           />
         </PopoverContent>
       </Popover>
