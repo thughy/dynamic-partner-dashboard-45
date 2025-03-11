@@ -1,5 +1,4 @@
-
-import { Partner, Transaction, PartnerSummary } from '@/types/partner';
+import { Partner, Transaction, PartnerSummary, Client } from '@/types/partner';
 
 // Função para obter transações dos últimos 7 dias
 export const getLastSevenDaysTransactions = (transactions: Transaction[]): Transaction[] => {
@@ -64,7 +63,7 @@ export const parseCSVData = (csvText: string, partnerId: string): Transaction[] 
     return {
       id: `${partnerId}-${index}`,
       partnerId,
-      date: columns[0].trim(),
+      date: columns[0]?.trim() || "",
       time: columns[1]?.trim() || undefined,
       clientName: columns[2]?.trim().replace(/"/g, '') || undefined,
       clientLogin: columns[3]?.trim().replace(/"/g, '') || undefined,
@@ -72,6 +71,29 @@ export const parseCSVData = (csvText: string, partnerId: string): Transaction[] 
       amount: parseFloat(columns[5]?.trim().replace(/[^0-9.-]+/g, '') || columns[2]?.trim().replace(/[^0-9.-]+/g, '')),
       type: (columns[6]?.trim().toLowerCase() || columns[3]?.trim().toLowerCase()).includes('entrada') ? 'entrada' : 'saida',
       method: columns[7]?.trim().replace(/"/g, '') || undefined
+    };
+  });
+};
+
+// Função para analisar dados CSV de clientes
+export const parseClientCSVData = (csvText: string, partnerId: string): Client[] => {
+  const lines = csvText.trim().split('\n');
+  
+  // Pular linha de cabeçalho
+  const dataRows = lines.slice(1);
+  
+  return dataRows.map((row, index) => {
+    const columns = row.split(',');
+    
+    // Assumindo formato CSV: login, nome, status
+    return {
+      id: `client-${partnerId}-${index}`,
+      partnerId,
+      login: columns[0]?.trim() || "",
+      name: columns[1]?.trim() || undefined,
+      active: columns[2]?.trim().toLowerCase() === 'ativo',
+      lastTransaction: "",
+      balance: 0
     };
   });
 };

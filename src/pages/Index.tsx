@@ -12,9 +12,11 @@ import {
   Calendar,
   RefreshCw,
   LogOut,
-  Globe
+  Globe,
+  UserCheck
 } from "lucide-react";
 import ImportCSV from "@/components/ImportCSV";
+import ImportClients from "@/components/ImportClients";
 import PartnerList from "@/components/PartnerList";
 import Dashboard from "@/components/Dashboard";
 import LoginForm from "@/components/LoginForm";
@@ -25,6 +27,7 @@ import { usePartners } from "@/context/PartnerContext";
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isImporting, setIsImporting] = useState(false);
+  const [importType, setImportType] = useState<"transactions" | "clients">("transactions");
   const { isLoggedIn, logoutFromWebsite, syncWithGoogleSheets, downloadAllPartnersCSV } = usePartners();
 
   const handleSyncNow = async () => {
@@ -40,6 +43,12 @@ const Index = () => {
 
   const handleLogout = () => {
     logoutFromWebsite();
+  };
+
+  const handleImport = (type: "transactions" | "clients") => {
+    setImportType(type);
+    setIsImporting(true);
+    setActiveTab("importar");
   };
 
   if (!isLoggedIn) {
@@ -95,15 +104,34 @@ const Index = () => {
               <Download className="h-4 w-4" />
               Atualizar Dados
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsImporting(true)}
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <Upload className="h-4 w-4" />
-              Importar CSV
-            </Button>
+            <div className="relative group">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex items-center gap-1"
+              >
+                <Upload className="h-4 w-4" />
+                Importar
+              </Button>
+              <div className="absolute right-0 mt-2 w-48 bg-background shadow-lg rounded-md border border-border hidden group-hover:block z-10">
+                <div className="py-1">
+                  <button 
+                    className="w-full text-left px-4 py-2 hover:bg-accent flex items-center gap-2"
+                    onClick={() => handleImport("transactions")}
+                  >
+                    <Activity className="h-4 w-4" />
+                    Transações
+                  </button>
+                  <button 
+                    className="w-full text-left px-4 py-2 hover:bg-accent flex items-center gap-2"
+                    onClick={() => handleImport("clients")}
+                  >
+                    <UserCheck className="h-4 w-4" />
+                    Clientes
+                  </button>
+                </div>
+              </div>
+            </div>
             <Button 
               variant="ghost" 
               size="sm"
@@ -148,10 +176,21 @@ const Index = () => {
           <TabsContent value="importar" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Importar Dados CSV</CardTitle>
+                <CardTitle>Importar Dados</CardTitle>
               </CardHeader>
               <CardContent>
-                <ImportCSV />
+                <Tabs defaultValue={importType} className="mt-2">
+                  <TabsList className="grid w-[400px] grid-cols-2">
+                    <TabsTrigger value="transactions">Transações</TabsTrigger>
+                    <TabsTrigger value="clients">Clientes</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="transactions" className="mt-4">
+                    <ImportCSV />
+                  </TabsContent>
+                  <TabsContent value="clients" className="mt-4">
+                    <ImportClients />
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>

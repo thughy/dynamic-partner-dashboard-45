@@ -12,6 +12,17 @@ export interface Transaction {
   method?: string;       // Método de pagamento (como "PIX")
 }
 
+export interface Client {
+  id: string;
+  partnerId: string;
+  login: string;         // @ do cliente
+  name?: string;         // Nome do cliente (opcional)
+  active?: boolean;      // Se o cliente está ativo
+  lastTransaction?: string; // Data da última transação
+  balance?: number;      // Saldo atual (opcional)
+  notes?: string;        // Observações
+}
+
 export interface Partner {
   id: string;
   name: string;
@@ -19,6 +30,7 @@ export interface Partner {
   commission: number; // Percentual
   bonus: number;      // Valor fixo
   transactions: Transaction[];
+  clients: Client[];  // Nova lista de clientes
   clientCount?: number; // Contagem de clientes
   active?: boolean;     // Se o parceiro está ativo ou não
 }

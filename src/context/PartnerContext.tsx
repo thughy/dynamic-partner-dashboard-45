@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Partner, Transaction, PartnerSummary, LoginCredentials, SyncStatus } from '@/types/partner';
-import { calculatePartnerSummary, calculateTotalSummary, parseCSVData } from '@/services/partnerService';
+import { Partner, Transaction, PartnerSummary, LoginCredentials, SyncStatus, Client } from '@/types/partner';
+import { calculatePartnerSummary, calculateTotalSummary, parseCSVData, parseClientCSVData } from '@/services/partnerService';
 import { fetchPartnersFromWebsite, fetchPartnerTransactions, downloadCSV } from '@/services/webScraperService';
 import { syncWithGoogleSheets, fetchDataFromGoogleSheets, getLastSyncTime } from '@/services/googleSheetsService';
 import { login, logout, isAuthenticated } from '@/services/authService';
@@ -17,6 +16,10 @@ type PartnerContextType = {
   updatePartner: (updatedPartner: Partner) => void;
   deletePartner: (id: string) => void;
   importCSVForPartner: (partnerId: string, csvContent: string) => void;
+  importClientsForPartner: (partnerId: string, csvContent: string) => void;
+  addClientToPartner: (partnerId: string, client: Client) => void;
+  updateClientForPartner: (partnerId: string, updatedClient: Client) => void;
+  deleteClientFromPartner: (partnerId: string, clientId: string) => void;
   getPartnerSummary: (partnerId: string) => PartnerSummary | null;
   getAllPartnerSummaries: () => PartnerSummary[];
   getTotalSummary: () => any;
@@ -47,7 +50,15 @@ export const PartnerProvider: React.FC<{children: React.ReactNode}> = ({ childre
     const savedPartners = localStorage.getItem('partners');
     if (savedPartners) {
       try {
-        setPartners(JSON.parse(savedPartners));
+        const parsedPartners = JSON.parse(savedPartners);
+        
+        // Ensure all partners have a clients array
+        const updatedPartners = parsedPartners.map((partner: Partner) => ({
+          ...partner,
+          clients: partner.clients || []
+        }));
+        
+        setPartners(updatedPartners);
       } catch (error) {
         console.error('Failed to parse partners from localStorage:', error);
       }
@@ -82,7 +93,13 @@ export const PartnerProvider: React.FC<{children: React.ReactNode}> = ({ childre
       return;
     }
     
-    setPartners(prev => [...prev, partner]);
+    // Ensure partner has clients array
+    const newPartner = {
+      ...partner,
+      clients: partner.clients || []
+    };
+    
+    setPartners(prev => [...prev, newPartner]);
     toast({
       title: "Sucesso",
       description: `Parceiro ${partner.name} adicionado com sucesso.`,
@@ -357,6 +374,115 @@ export const PartnerProvider: React.FC<{children: React.ReactNode}> = ({ childre
     }
   };
 
+  // New methods for client management
+  const importClientsForPartner = (partnerId: string, csvContent: string) => {
+    try {
+      const clients = parseClientCSVData(csvContent, partnerId);
+      
+      setPartners(prev => 
+        prev.map(partner => {
+          if (partner.id === partnerId) {
+            // Get existing client logins for deduplication
+            const existingLogins = new Set(partner.clients?.map(c => c.login) || []);
+            
+            // Filter out clients that already exist (by login)
+            const newClients = clients.filter(client => !existingLogins.has(client.login));
+            
+            // Add new clients to the partner
+            return {
+              ...partner,
+              clients: [...(partner.clients || []), ...newClients]
+            };
+          }
+          return partner;
+        })
+      );
+      
+      toast({
+        title: "Importação Concluída",
+        description: `${clients.length} clientes importados com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Error importing client CSV:', error);
+      toast({
+        title: "Erro na Importação",
+        description: "Falha ao importar o arquivo CSV de clientes. Verifique o formato.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addClientToPartner = (partnerId: string, client: Client) => {
+    setPartners(prev => 
+      prev.map(partner => {
+        if (partner.id === partnerId) {
+          // Check if client with this login already exists
+          const existingClientIndex = partner.clients?.findIndex(c => c.login === client.login);
+          
+          if (existingClientIndex !== undefined && existingClientIndex >= 0) {
+            toast({
+              title: "Erro",
+              description: `Cliente com login ${client.login} já existe para este parceiro.`,
+              variant: "destructive",
+            });
+            return partner;
+          }
+          
+          return {
+            ...partner,
+            clients: [...(partner.clients || []), client]
+          };
+        }
+        return partner;
+      })
+    );
+    
+    toast({
+      title: "Sucesso",
+      description: `Cliente ${client.login} adicionado com sucesso.`,
+    });
+  };
+
+  const updateClientForPartner = (partnerId: string, updatedClient: Client) => {
+    setPartners(prev => 
+      prev.map(partner => {
+        if (partner.id === partnerId) {
+          return {
+            ...partner,
+            clients: partner.clients?.map(client => 
+              client.id === updatedClient.id ? updatedClient : client
+            ) || []
+          };
+        }
+        return partner;
+      })
+    );
+    
+    toast({
+      title: "Sucesso",
+      description: `Cliente ${updatedClient.login} atualizado com sucesso.`,
+    });
+  };
+
+  const deleteClientFromPartner = (partnerId: string, clientId: string) => {
+    setPartners(prev => 
+      prev.map(partner => {
+        if (partner.id === partnerId) {
+          return {
+            ...partner,
+            clients: partner.clients?.filter(client => client.id !== clientId) || []
+          };
+        }
+        return partner;
+      })
+    );
+    
+    toast({
+      title: "Cliente Removido",
+      description: `Cliente removido com sucesso.`,
+    });
+  };
+
   return (
     <PartnerContext.Provider
       value={{
@@ -369,6 +495,10 @@ export const PartnerProvider: React.FC<{children: React.ReactNode}> = ({ childre
         updatePartner,
         deletePartner,
         importCSVForPartner,
+        importClientsForPartner,
+        addClientToPartner,
+        updateClientForPartner,
+        deleteClientFromPartner,
         getPartnerSummary,
         getAllPartnerSummaries,
         getTotalSummary,
