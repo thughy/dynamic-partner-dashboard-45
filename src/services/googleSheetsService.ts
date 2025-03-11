@@ -78,7 +78,8 @@ export const fetchDataFromGoogleSheets = async (): Promise<Partner[] | null> => 
           { id: '1-1', partnerId: '1', date: '2023-10-15', amount: 500, type: 'entrada', description: 'Depósito Cliente A' },
           { id: '1-2', partnerId: '1', date: '2023-10-16', amount: 200, type: 'saida', description: 'Saque' },
           { id: '1-3', partnerId: '1', date: '2023-10-17', amount: 750, type: 'entrada', description: 'Depósito Cliente B' }
-        ]
+        ],
+        clients: [] // Add empty clients array
       },
       {
         id: '2',
@@ -89,7 +90,8 @@ export const fetchDataFromGoogleSheets = async (): Promise<Partner[] | null> => 
         transactions: [
           { id: '2-1', partnerId: '2', date: '2023-10-15', amount: 600, type: 'entrada', description: 'Depósito Cliente C' },
           { id: '2-2', partnerId: '2', date: '2023-10-16', amount: 150, type: 'saida', description: 'Saque' },
-        ]
+        ],
+        clients: [] // Add empty clients array
       }
     ];
     

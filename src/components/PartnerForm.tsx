@@ -20,7 +20,8 @@ const PartnerForm = ({ existingPartner, onCancel }: PartnerFormProps) => {
     name: existingPartner?.name || "",
     username: existingPartner?.username || "",
     commission: existingPartner?.commission || 10,
-    bonus: existingPartner?.bonus || 0
+    bonus: existingPartner?.bonus || 0,
+    active: existingPartner?.active !== false, // default to true if not specified
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,7 +50,8 @@ const PartnerForm = ({ existingPartner, onCancel }: PartnerFormProps) => {
         name: formData.name,
         username: formData.username,
         commission: formData.commission,
-        bonus: formData.bonus
+        bonus: formData.bonus,
+        active: formData.active
       });
     } else {
       addPartner({
@@ -58,7 +60,9 @@ const PartnerForm = ({ existingPartner, onCancel }: PartnerFormProps) => {
         username: formData.username,
         commission: formData.commission,
         bonus: formData.bonus,
-        transactions: []
+        transactions: [],
+        clients: [], // Adding the required clients array
+        active: formData.active
       });
     }
     

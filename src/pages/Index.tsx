@@ -13,7 +13,9 @@ import {
   RefreshCw,
   LogOut,
   Globe,
-  UserCheck
+  UserCheck,
+  BarChart,
+  FileText
 } from "lucide-react";
 import ImportCSV from "@/components/ImportCSV";
 import ImportClients from "@/components/ImportClients";
@@ -23,6 +25,8 @@ import LoginForm from "@/components/LoginForm";
 import GoogleSheetsConfig from "@/components/GoogleSheetsConfig";
 import SyncStatus from "@/components/SyncStatus";
 import { usePartners } from "@/context/PartnerContext";
+import CommissionDashboard from "@/components/CommissionDashboard";
+import ClientTransactionReport from "@/components/ClientTransactionReport";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -158,15 +162,43 @@ const Index = () => {
         </div>
 
         <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-4 w-[500px] mb-8">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="parceiros">Parceiros</TabsTrigger>
-            <TabsTrigger value="importar">Importar Dados</TabsTrigger>
-            <TabsTrigger value="configurar">Configurações</TabsTrigger>
+          <TabsList className="grid grid-cols-6 w-[700px] mb-8">
+            <TabsTrigger value="dashboard">
+              <BarChart className="h-4 w-4 mr-2" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="comissoes">
+              <BadgeDollarSign className="h-4 w-4 mr-2" />
+              Comissões
+            </TabsTrigger>
+            <TabsTrigger value="transacoes">
+              <Activity className="h-4 w-4 mr-2" />
+              Transações
+            </TabsTrigger>
+            <TabsTrigger value="parceiros">
+              <Users className="h-4 w-4 mr-2" />
+              Parceiros
+            </TabsTrigger>
+            <TabsTrigger value="importar">
+              <Upload className="h-4 w-4 mr-2" />
+              Importar
+            </TabsTrigger>
+            <TabsTrigger value="configurar">
+              <Globe className="h-4 w-4 mr-2" />
+              Config
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="dashboard" className="space-y-4">
             <Dashboard />
+          </TabsContent>
+          
+          <TabsContent value="comissoes" className="space-y-4">
+            <CommissionDashboard />
+          </TabsContent>
+          
+          <TabsContent value="transacoes" className="space-y-4">
+            <ClientTransactionReport />
           </TabsContent>
           
           <TabsContent value="parceiros" className="space-y-4">
